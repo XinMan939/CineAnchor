@@ -37,13 +37,28 @@
   .poster .y { font-size: 11px; color: #7d8590; }
   .poster .r { font-size: 11px; color: #e3b341; }
   #hint { padding: 60px; text-align: center; color: #7d8590; font-size: 14px; }
-  #trending-wrap { padding: 20px 24px 0; }
-  #trending-wrap h2 { font-size: 15px; color: #7d8590; margin-bottom: 12px; }
-  #trending { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
+  section.block { padding: 20px 24px 0; }
+  section.block h2 { font-size: 15px; color: #7d8590; margin-bottom: 12px; }
+  section.block .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
   select.season { background: #161b22; color: #e6edf3; border: 1px solid #30363d;
                    border-radius: 6px; padding: 3px 8px; font-size: 12px; }
   button.reload { background:none; border:1px solid #30363d; color:#7d8590; font-size:12px;
-                  padding:4px 10px; border-radius:6px; cursor:pointer; }
+                  padding:4px 10px; border-radius:6px; cursor:pointer; margin-left:10px; }
+  /* 详情页: 背景大图 + 元信息 */
+  .detail-hero { position: relative; border-radius: 12px; overflow: hidden;
+                 margin-bottom: 14px; border: 1px solid #30363d; }
+  .detail-hero .backdrop { width: 100%; aspect-ratio: 16/7; object-fit: cover; display: block; }
+  .detail-hero .veil { position: absolute; inset: 0;
+                        background: linear-gradient(180deg, #0d111700 0%, #0d1117e6 78%, #0d1117 100%); }
+  .detail-hero .info { position: absolute; left: 16px; right: 16px; bottom: 12px;
+                       display: flex; gap: 14px; align-items: flex-end; }
+  .detail-hero .info img { width: 92px; aspect-ratio: 2/3; object-fit: cover;
+                           border-radius: 8px; border: 1px solid #30363d88; flex: none; }
+  .detail-hero .info .txt { min-width: 0; }
+  .detail-hero .info h3 { font-size: 18px; margin-bottom: 4px; }
+  .detail-hero .info .meta { font-size: 12px; color: #9ea7b3; }
+  .overview { font-size: 13px; line-height: 1.7; color: #c9d1d9; }
+  .ep-list { max-height: 420px; overflow-y: auto; }
 </style>
 </head>
 <body>
@@ -55,10 +70,16 @@
 <div id="hint" style="display:none"></div>
 <div id="results" style="display:none"></div>
 
-<div id="trending-wrap">
-  <h2>🔥 最新上线</h2>
-  <div id="trending"></div>
-</div>
+<section class="block" id="latest-wrap">
+  <h2>🆕 最新上线 <span style="font-size:11px">采集站更新 · 已过 TMDB 识别</span>
+    <button class="reload" onclick="runIndexer()">抓取一轮</button></h2>
+  <div class="grid" id="latest"></div>
+</section>
+
+<section class="block" id="trending-wrap">
+  <h2>🔥 热门榜单</h2>
+  <div class="grid" id="trending"></div>
+</section>
 
 <main id="main" style="display:none">
   <div id="player-pane">
@@ -74,8 +95,26 @@ const $ = s => document.querySelector(s);
 
 let HlsPlayer = null;
 
-// 首页 trending
-(async () => {
+// 首页: 内容库最新上线 + TMDB 热门榜
+async function loadLatest() {
+  try {
+    const r = await fetch(`${API}/api/v1/latest?n=24`);
+    if (!r.ok) { $('#latest-wrap').style.display = 'none'; return; }
+    const d = await r.json();
+    const box = $('#latest');
+    d.items.forEach(i => {
+      const el = document.createElement('div');
+      el.className = 'poster';
+      el.innerHTML = `<img src="${i.poster || ''}" loading="lazy">
+                      <div class="t">${i.title}</div>
+                      <div class="y">${i.updated_at}${i.season ? ' S' + i.season : ''}</div>`;
+      el.onclick = () => openMedia(i.type, i.tmdb_id, i.title, i.season || 0);
+      box.appendChild(el);
+    });
+  } catch (e) { console.warn('latest failed', e); }
+}
+
+async function loadTrending() {
   try {
     const r = await fetch(`${API}/api/v1/trending`);
     const d = await r.json();
@@ -90,7 +129,22 @@ let HlsPlayer = null;
       box.appendChild(el);
     });
   } catch (e) { console.warn('trending failed', e); }
-})();
+}
+
+async function runIndexer() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '抓取中…';
+  try {
+    const r = await fetch(`${API}/api/v1/indexer/run`, { method: 'POST' });
+    const d = await r.json();
+    $('#latest').innerHTML = '';
+    await loadLatest();
+  } catch (e) { alert('抓取失败: ' + e); }
+  finally { btn.disabled = false; btn.textContent = '抓取一轮'; }
+}
+
+loadLatest();
+loadTrending();
 
 async function search() {
   const q = $('#searchbox').value.trim();
@@ -118,6 +172,7 @@ async function search() {
 
 async function openMedia(type, id, title, season) {
   $('#trending-wrap').style.display = 'none';
+  $('#latest-wrap').style.display = 'none';
   $('#results').style.display = 'none';
   $('#main').style.display = 'grid';
   $('#lines').innerHTML = '<div class="card"><h3>线路聚合中…</h3><div class="meta">并发请求采集站</div></div>';
@@ -135,16 +190,26 @@ function renderLines(d) {
          ${Array.from({length: d.media.seasons}, (_, i) =>
            `<option value="${i+1}" ${d.media.season === i+1 ? 'selected' : ''}>第 ${i+1} 季</option>`).join('')}
        </select>` : '';
-  box.innerHTML = `
-    <div class="card">
-      <h3>${d.media.title} (${d.media.year}) ${seasonSel}</h3>
-      <div class="meta">${d.media.overview ? d.media.overview.slice(0, 100) + '…' : ''}</div>
+  const backdrop = d.media.backdrop
+    ? `https://image.tmdb.org/t/p/w780${d.media.backdrop}` : '';
+  const poster = d.media.poster_full || '';
+  const hero = `
+    <div class="detail-hero">
+      ${backdrop ? `<img class="backdrop" src="${backdrop}" onerror="this.remove()">` : ''}
+      <div class="veil"></div>
+      <div class="info">
+        ${poster ? `<img src="${poster}">` : ''}
+        <div class="txt">
+          <h3>${d.media.title} (${d.media.year})</h3>
+          <div class="meta">${d.media.type === 'tv' ? '剧集' : '电影'} · ${d.lines.length} 条线路 ${seasonSel}</div>
+        </div>
+      </div>
     </div>
-    <div class="card">
-      <h3>播放线路 <span class="meta">${d.lines.length} 条</span></h3>
-    </div>`;
+    <div class="card"><div class="overview">${d.media.overview || '暂无简介'}</div></div>`;
+  box.innerHTML = hero + '<div class="card"><h3>播放线路 <span class="meta">点击切换</span></h3><div class="ep-list"></div></div>';
+  const epBox = box.querySelector('.ep-list');
   if (!d.lines.length) {
-    box.innerHTML += '<div class="card"><div class="meta">暂无可用线路</div></div>';
+    epBox.innerHTML = '<div class="meta" style="padding:8px 0">暂无可用线路</div>';
     return;
   }
   d.lines.forEach((l, idx) => {
@@ -156,7 +221,7 @@ function renderLines(d) {
       el.classList.add('active');
       play(l.url);
     };
-    box.lastChild.appendChild(el);
+    epBox.appendChild(el);
   });
   play(d.lines[0].url);  // 默认播第一条
 }

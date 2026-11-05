@@ -67,6 +67,7 @@ class Tmdb:
             "original_title": d.get("original_title") or d.get("original_name"),
             "year": (d.get("release_date") or d.get("first_air_date") or "")[:4],
             "poster": d.get("poster_path"),
+            "backdrop": d.get("backdrop_path"),
             "overview": d.get("overview"),
             "seasons": d.get("number_of_seasons"),
         }

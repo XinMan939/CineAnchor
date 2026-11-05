@@ -1,19 +1,23 @@
 """
-CineAnchor · 影锚 — Phase 1 API 服务
+CineAnchor · 影锚 — Phase 1/2.5 API 服务
 ====================================
 把 Phase 0 的映射链路 (cineanchor.py) 包成 HTTP 服务。
 
 接口:
   GET /api/v1/search?q=奥本海默[&year=2023]   -> TMDB 搜索 (带缓存)
   GET /api/v1/detail/movie/872585             -> TMDB 详情 (带缓存)
-  GET /api/v1/sources/movie/872585            -> 线路池聚合 (并发+缓存)
+  GET /api/v1/sources/movie/872585            -> 线路池聚合 (并发+缓存+熔断)
+  GET /api/v1/trending?window=day|week       -> TMDB 热门榜
+  GET /api/v1/latest?n=30                    -> 内容库最新上线 (index.db)
 
 缓存: SQLite (tmdb 详情 24h, 线路池 6h) — 零依赖, 不需要 Redis
 并发: asyncio.gather + wait_for 超时切断 (慢源不拖死接口)
+熔断: 源连续失败 N 次 (默认 3) 暂时屏蔽 COOLDOWN 秒 (默认 30 分钟)
 
 运行:
   python server.py            # 127.0.0.1:8787
   python server.py --reload   # 开发模式
+  python indexer.py            # 先抓一轮内容库 (index.db)
 """
 import argparse
 import asyncio
@@ -44,6 +48,9 @@ DB_PATH = BASE / "cache.db"
 TMDB_CACHE_TTL = 24 * 3600      # TMDB 元数据缓存 24h
 SOURCES_CACHE_TTL = 6 * 3600    # 线路池缓存 6h
 PROVIDER_TIMEOUT = 8           # 单源并发超时 8s
+CIRCUIT_THRESHOLD = 3          # 连续失败 N 次触发熔断
+CIRCUIT_COOLDOWN = 30 * 60     # 熔断冷却 30 分钟
+INDEX_DB_PATH = BASE / "index.db"
 
 POSTER_BASE = "https://image.tmdb.org/t/p/w500"
 
@@ -81,6 +88,53 @@ class Cache:
 
 
 CACHE = Cache(DB_PATH)
+
+
+# ---------------------------------------------------------------------------
+# 源熔断器: 连续失败 N 次的 provider 暂时屏蔽, 冷却后放行试探
+# ---------------------------------------------------------------------------
+class CircuitBreaker:
+    def __init__(self, threshold=CIRCUIT_THRESHOLD, cooldown=CIRCUIT_COOLDOWN):
+        self.threshold = threshold
+        self.cooldown = cooldown
+        self.fails = {}    # name -> 连续失败次数
+        self.opened = {}   # name -> 熔断打开时间戳
+
+    def allow(self, name):
+        """熔断中返回 False; 冷却期满半开 (放行一次试探)"""
+        t = self.opened.get(name)
+        if t is None:
+            return True
+        if time.time() - t >= self.cooldown:
+            # 半开: 允许试探, 保持 opened 记录直到结果回来
+            return True
+        return False
+
+    def record(self, name, ok):
+        if ok:
+            self.fails[name] = 0
+            self.opened.pop(name, None)
+        else:
+            self.fails[name] = self.fails.get(name, 0) + 1
+            if self.fails[name] >= self.threshold:
+                self.opened[name] = time.time()
+
+    def status(self):
+        now = time.time()
+        out = {}
+        for name in set(list(self.fails) + list(self.opened)):
+            t = self.opened.get(name)
+            if t is not None and now - t < self.cooldown:
+                out[name] = {"circuit": "open", "retry_in_s": int(self.cooldown - (now - t))}
+            elif t is not None:
+                out[name] = {"circuit": "half-open", "fails": self.fails.get(name, 0)}
+            else:
+                out[name] = {"circuit": "closed", "fails": self.fails.get(name, 0)}
+        return out
+
+
+BREAKER = CircuitBreaker()
+INDEXER_RUNNING = False
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +222,7 @@ async def tmdb_trending_cached(window="week"):
 
 
 async def resolve_sources_cached(media_type, tmdb_id, season=None, force=False):
-    """线路池: 先查缓存, miss 则并发聚合所有 provider"""
+    """线路池: 先查缓存, miss 则并发聚合所有 provider (熔断中的源跳过)"""
     key = f"sources:{media_type}:{tmdb_id}:{season or ''}"
     if not force:
         hit = CACHE.get(key)
@@ -178,18 +232,27 @@ async def resolve_sources_cached(media_type, tmdb_id, season=None, force=False):
     media = await tmdb_detail_cached(media_type, tmdb_id, season)
     mapper = Mapper(PROVIDERS, verbose=False)
 
-    # 并发: 每个 provider 独立超时, 谁慢切谁
+    active = [p for p in PROVIDERS if BREAKER.allow(p.name)]
+    skipped = [p.name for p in PROVIDERS if p not in active]
+
+    # 并发: 每个 provider 独立超时, 谁慢切谁; 结果回写熔断器
     async def one_provider(p):
         try:
-            return await asyncio.wait_for(aio(mapper._resolve_one, p, media), PROVIDER_TIMEOUT)
+            r = await asyncio.wait_for(aio(mapper._resolve_one, p, media), PROVIDER_TIMEOUT)
+            # 注意: _resolve_one 内部会把 provider 错误吞进 entry["error"] 而非抛异常,
+            # 所以"有 error 字段"也算失败 (未匹配但无 error 才算健康)
+            BREAKER.record(p.name, ok=not r.get("error"))
+            return r
         except asyncio.TimeoutError:
+            BREAKER.record(p.name, ok=False)
             return {"provider": p.name, "matched": 0, "lines": [],
                     "error": "timeout", "pool": {}}
         except Exception as e:
+            BREAKER.record(p.name, ok=False)
             return {"provider": p.name, "matched": 0, "lines": [],
                     "error": str(e), "pool": {}}
 
-    results = await asyncio.gather(*[one_provider(p) for p in PROVIDERS])
+    results = await asyncio.gather(*[one_provider(p) for p in active])
 
     pool = {}
     stats = {}
@@ -203,12 +266,37 @@ async def resolve_sources_cached(media_type, tmdb_id, season=None, force=False):
             "lines": r.get("lines", 0),
             "error": r.get("error"),
         }
+    for name in skipped:
+        stats[name] = {"matched": 0, "lines": 0, "error": "circuit_open",
+                       "circuit": BREAKER.status().get(name, {})}
 
     lines = sorted(pool.values(),
                    key=lambda x: (x["provider"], x["line"], x["episode"]))
     payload = {"media": media, "stats": stats, "lines": lines}
     CACHE.set(key, payload, SOURCES_CACHE_TTL)
     return payload, False
+
+
+# ---------------------------------------------------------------------------
+# 内容库: index.db 最新上线 (由 indexer.py 定时抓取)
+# ---------------------------------------------------------------------------
+def _latest_from_db(n):
+    if not INDEX_DB_PATH.exists():
+        return None
+    conn = sqlite3.connect(f"file:{INDEX_DB_PATH}?mode=ro", uri=True)
+    try:
+        cur = conn.execute(
+            "SELECT tmdb_id, type, season, title, year, poster, updated_at "
+            "FROM videos ORDER BY updated_at DESC LIMIT ?", (n,))
+        cols = ["tmdb_id", "type", "season", "title", "year", "poster", "updated_at"]
+        items = []
+        for r in cur.fetchall():
+            it = dict(zip(cols, r))
+            it["updated_at"] = time.strftime("%m-%d %H:%M", time.localtime(it["updated_at"]))
+            items.append(it)
+        return items
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -251,6 +339,30 @@ async def api_trending(window: str = "week"):
     return {"items": await tmdb_trending_cached(window)}
 
 
+@app.get("/api/v1/latest")
+async def api_latest(n: int = Query(30, ge=1, le=120)):
+    """内容库最新上线: 采集站更新 + TMDB 识别 (indexer.py 抓取入库)"""
+    items = await aio(_latest_from_db, n)
+    if items is None:
+        raise HTTPException(503, "index.db 不存在 — 先运行 python indexer.py 抓一轮")
+    return {"count": len(items), "items": items}
+
+
+@app.post("/api/v1/indexer/run")
+async def api_indexer_run(pages: int = Query(3, ge=1, le=20)):
+    """手动触发一轮索引抓取 (等价于 cron 跑 indexer.py; 前端"抓取一轮"按钮)"""
+    global INDEXER_RUNNING
+    if INDEXER_RUNNING:
+        return {"status": "already_running"}
+    INDEXER_RUNNING = True
+    try:
+        from indexer import run_index
+        stat = await aio(run_index, pages)
+        return {"status": "done", **stat}
+    finally:
+        INDEXER_RUNNING = False
+
+
 @app.get("/api/v1/sources/{media_type}/{tmdb_id}")
 async def api_sources(media_type: str, tmdb_id: int, season: int = 0, force: bool = False):
     """核心接口: TMDB ID -> 多源聚合线路池 (tv 可带 season 路由到对应季)"""
@@ -267,7 +379,9 @@ async def api_health():
     return {
         "status": "ok",
         "providers": [{"name": p.name, "api": p.api_url} for p in PROVIDERS],
+        "circuit": BREAKER.status(),
         "tmdb_host": TMDB.host,
+        "index_db": INDEX_DB_PATH.exists(),
     }
 
 
