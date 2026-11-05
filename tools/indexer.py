@@ -18,6 +18,7 @@ CineAnchor · 影锚 — Phase 2.5 内容库索引器
 """
 import argparse
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -32,7 +33,9 @@ from cineanchor import (  # noqa: E402
     match_score, normalize_title, parse_episodes, parse_year,
 )
 
-DB_PATH = BASE / "index.db"
+# 数据目录: 与 server.py 一致 (容器里 /app/data, 本地默认脚本同目录)
+DATA_DIR = Path(os.environ.get("CINEANCHOR_DATA_DIR", str(BASE)))
+DB_PATH = DATA_DIR / "index.db"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS videos (

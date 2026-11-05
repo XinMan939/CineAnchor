@@ -43,14 +43,20 @@ from cineanchor import (  # noqa: E402
 )
 
 CFG = load_config(BASE / "config.json")
-DB_PATH = BASE / "cache.db"
 
 TMDB_CACHE_TTL = 24 * 3600      # TMDB 元数据缓存 24h
 SOURCES_CACHE_TTL = 6 * 3600    # 线路池缓存 6h
 PROVIDER_TIMEOUT = 8           # 单源并发超时 8s
 CIRCUIT_THRESHOLD = 3          # 连续失败 N 次触发熔断
 CIRCUIT_COOLDOWN = 30 * 60     # 熔断冷却 30 分钟
-INDEX_DB_PATH = BASE / "index.db"
+
+# 数据目录: 容器里设 CINEANCHOR_DATA_DIR=/app/data 把 SQLite 挂到卷;
+# 本地默认就放脚本同目录, 行为不变.
+DATA_DIR = Path(os.environ.get("CINEANCHOR_DATA_DIR", str(BASE)))
+if not DATA_DIR.exists():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DATA_DIR / "cache.db"
+INDEX_DB_PATH = DATA_DIR / "index.db"
 
 POSTER_BASE = "https://image.tmdb.org/t/p/w500"
 
@@ -271,7 +277,7 @@ async def resolve_sources_cached(media_type, tmdb_id, season=None, force=False):
                        "circuit": BREAKER.status().get(name, {})}
 
     lines = sorted(pool.values(),
-                   key=lambda x: (x["provider"], x["line"], x["episode"]))
+                   key=lambda x: (-x.get("quality", 10), x["provider"], x["line"], x["episode"]))
     payload = {"media": media, "stats": stats, "lines": lines}
     CACHE.set(key, payload, SOURCES_CACHE_TTL)
     return payload, False

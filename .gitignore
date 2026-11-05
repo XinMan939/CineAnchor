@@ -8,3 +8,10 @@ __pycache__/
 # 输出
 output/
 *.log
+
+# 部署数据 (SQLite / 证书)
+data/
+deploy/certs/
+
+# Docker
+.dockerignore

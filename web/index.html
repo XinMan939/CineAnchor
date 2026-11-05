@@ -215,7 +215,8 @@ function renderLines(d) {
   d.lines.forEach((l, idx) => {
     const el = document.createElement('div');
     el.className = 'line-item' + (idx === 0 ? ' active' : '');
-    el.innerHTML = `<span>${l.episode}</span><span class="src">${l.provider} · score${l.score}</span>`;
+    const q = l.quality >= 40 ? '4K' : l.quality >= 30 ? '1080P' : l.quality >= 20 ? '720P' : '';
+    el.innerHTML = `<span>${l.episode}${q ? ` <span class="src" style="color:#3fb950">[${q}]</span>` : ''}</span><span class="src">${l.provider} · score${l.score}</span>`;
     el.onclick = () => {
       document.querySelectorAll('.line-item').forEach(x => x.classList.remove('active'));
       el.classList.add('active');

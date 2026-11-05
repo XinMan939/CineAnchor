@@ -186,7 +186,9 @@ def match_score(media, vod):
 
 def parse_episodes(vod):
     """vod_play_url 格式: '线路名$集名$url1#集名$url2;;;线路2名$集名$u1#...'
-    单集电影可能只有 '集名$url' (如 '奥本海默$https://..'). 返回 dict[线路名, [(集名,url),...]]"""
+    单集电影可能只有 '集名$url' (如 '奥本海默$https://..').
+    注意: 有的站集名里还嵌套 '$$$' (如 'HD中字$url$$$HD中字$url'), 先切开.
+    返回 dict[线路名, [(集名,url),...]]"""
     lines = {}
     raw = vod.get("vod_play_url") or ""
     for group in raw.split(";;;"):
@@ -205,14 +207,37 @@ def parse_episodes(vod):
         eps = []
         for ep in eps_str.split("#"):
             ep = ep.strip()
-            if not ep or "$" not in ep:
-                continue
-            name, url = ep.rsplit("$", 1)
-            if url.startswith(("http", "//")):
-                eps.append((name, url))
+            # 有的站集名含 '$$$' 嵌套: 'HD中字$url$$$HD中字$url' -> 先按 $$$ 切
+            for sub in ep.split("$$$"):
+                sub = sub.strip()
+                if not sub or "$" not in sub:
+                    continue
+                name, url = sub.rsplit("$", 1)
+                if url.startswith(("http", "//")):
+                    eps.append((name, url))
         if eps:
             lines[line_name or "默认线路"] = eps
     return lines
+
+
+# ----------------------------------------------------------------------------
+# 清晰度排序: 线路名/集名里的画质关键词 -> 权重 (高画质排前)
+# ----------------------------------------------------------------------------
+QUALITY_PATTERNS = [
+    (re.compile(r"(4k|2160p|uhd|杜比|蓝光原盘|remux)", re.I), 40),
+    (re.compile(r"(1080p|1080i|蓝光|blu-?ray|web-?dl)", re.I), 30),
+    (re.compile(r"(720p|hd|高清)", re.I), 20),
+    (re.compile(r"(抢先|枪版|ts版|cam)", re.I), -10),
+]
+
+
+def quality_rank(line_name, episode_name=""):
+    """画质权重: 4K(40) > 1080P(30) > 720P(20) > 无标注(10) > 枪版(-10)"""
+    text = f"{line_name} {episode_name}"
+    for pat, score in QUALITY_PATTERNS:
+        if pat.search(text):
+            return score
+    return 10
 
 
 class Mapper:
@@ -250,6 +275,7 @@ class Mapper:
                             entry["pool"][key] = {
                                 "provider": p.name, "line": line_name,
                                 "episode": ep_name, "url": url, "score": score,
+                                "quality": quality_rank(line_name, ep_name),
                             }
             entry["matched"] = 1
             top = sorted(hits, key=lambda x: -x[0])[0][1]

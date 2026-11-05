@@ -7,8 +7,20 @@
       "api": "https://360zy.com/api.php/provide/vod"
     },
     {
-      "name": "天涯",
-      "api": "https://tyyszy.com/api.php/provide/vod"
+      "name": "量子",
+      "api": "http://cj.lziapi.com/api.php/provide/vod"
+    },
+    {
+      "name": "暴风",
+      "api": "https://bfzyapi.com/api.php/provide/vod"
+    },
+    {
+      "name": "非凡",
+      "api": "http://cj.ffzyapi.com/api.php/provide/vod"
+    },
+    {
+      "name": "电影天堂",
+      "api": "http://caiji.dyttzyapi.com/api.php/provide/vod"
     }
   ]
 }
