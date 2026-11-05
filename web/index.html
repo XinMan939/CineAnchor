@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineAnchor · 影锚</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, "Segoe UI", "PingFang SC", sans-serif;
+         background: #0d1117; color: #e6edf3; }
+  header { padding: 20px 28px; display: flex; gap: 18px; align-items: center;
+           border-bottom: 1px solid #21262d; }
+  header h1 { font-size: 20px; }
+  header .tag { font-size: 12px; color: #7d8590; }
+  #searchbox { flex: 1; max-width: 420px; padding: 9px 14px; border-radius: 8px;
+               border: 1px solid #30363d; background: #161b22; color: #e6edf3; outline: none; }
+  main { display: grid; grid-template-columns: 1fr 380px; gap: 0; min-height: calc(100vh - 65px); }
+  #player-pane { padding: 24px; }
+  #player { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; }
+  #lines { padding: 24px 24px 24px 0; overflow-y: auto; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+          padding: 16px; margin-bottom: 14px; }
+  .card h3 { font-size: 15px; margin-bottom: 6px; }
+  .card .meta { font-size: 12px; color: #7d8590; }
+  .line-item { display: flex; justify-content: space-between; align-items: center;
+               padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .line-item:hover { background: #1f2630; }
+  .line-item.active { background: #1f6feb33; border: 1px solid #1f6feb; }
+  .line-item .src { color: #7d8590; font-size: 12px; }
+  #results { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+             gap: 14px; padding: 24px; }
+  .poster { cursor: pointer; }
+  .poster img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px; }
+  .poster .t { font-size: 13px; margin-top: 6px; overflow: hidden;
+               white-space: nowrap; text-overflow: ellipsis; }
+  .poster .y { font-size: 11px; color: #7d8590; }
+  #hint { padding: 60px; text-align: center; color: #7d8590; font-size: 14px; }
+  button.reload { background:none; border:1px solid #30363d; color:#7d8590; font-size:12px;
+                  padding:4px 10px; border-radius:6px; cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>⚓ CineAnchor <span class="tag">以作品为锚 · 聚合线路</span></h1>
+  <input id="searchbox" placeholder="搜索作品名，回车…">
+</header>
+
+<div id="hint">搜索一部作品 → 点海报 → 等待线路聚合 → 播放</div>
+<div id="results" style="display:none"></div>
+
+<main id="main" style="display:none">
+  <div id="player-pane">
+    <video id="player" controls playsinline></video>
+  </div>
+  <div id="lines"></div>
+</main>
+
+<script>
+const API = location.origin.startsWith('http') && !location.port || location.port === '8787'
+  ? `${location.protocol}//${location.hostname}:8787` : '';
+const $ = s => document.querySelector(s);
+
+let HlsPlayer = null;
+
+async function search() {
+  const q = $('#searchbox').value.trim();
+  if (!q) return;
+  $('#hint').textContent = '搜索中…';
+  $('#hint').style.display = 'block';
+  $('#results').style.display = 'none';
+  $('#main').style.display = 'none';
+  const r = await fetch(`${API}/api/v1/search?q=${encodeURIComponent(q)}`);
+  const d = await r.json();
+  if (!d.count) { $('#hint').textContent = 'TMDB 未找到该作品'; return; }
+  $('#hint').style.display = 'none';
+  const box = $('#results');
+  box.innerHTML = '';
+  box.style.display = 'grid';
+  d.items.forEach(i => {
+    const el = document.createElement('div');
+    el.className = 'poster';
+    el.innerHTML = `<img src="${i.poster || ''}" loading="lazy">
+                   <div class="t">${i.title}</div><div class="y">${i.year || ''}</div>`;
+    el.onclick = () => openMedia(i.type, i.tmdb_id, i.title);
+    box.appendChild(el);
+  });
+}
+
+async function openMedia(type, id, title) {
+  $('#results').style.display = 'none';
+  $('#main').style.display = 'grid';
+  $('#lines').innerHTML = '<div class="card"><h3>线路聚合中…</h3><div class="meta">并发请求采集站</div></div>';
+  const r = await fetch(`${API}/api/v1/sources/${type}/${id}`);
+  const d = await r.json();
+  renderLines(d);
+}
+
+function renderLines(d) {
+  document.title = `${d.media.title} · CineAnchor`;
+  const box = $('#lines');
+  box.innerHTML = `
+    <div class="card">
+      <h3>${d.media.title} (${d.media.year})</h3>
+      <div class="meta">${d.media.overview ? d.media.overview.slice(0, 100) + '…' : ''}</div>
+    </div>
+    <div class="card">
+      <h3>播放线路 <span class="meta">${d.lines.length} 条</span>
+        <button class="reload" onclick="refresh()">↻ 强制刷新</button></h3>
+    </div>`;
+  if (!d.lines.length) {
+    box.innerHTML += '<div class="card"><div class="meta">暂无可用线路</div></div>';
+    return;
+  }
+  d.lines.forEach((l, idx) => {
+    const el = document.createElement('div');
+    el.className = 'line-item' + (idx === 0 ? ' active' : '');
+    el.innerHTML = `<span>${l.episode}</span><span class="src">${l.provider} · score${l.score}</span>`;
+    el.onclick = () => {
+      document.querySelectorAll('.line-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      play(l.url);
+    };
+    box.lastChild.appendChild(el);
+  });
+  play(d.lines[0].url);  // 默认播第一条
+}
+
+function refresh() {
+  // 简化: 重新走一遍 (缓存过期前 force 逻辑由后端 ?force=1 控制)
+  location.hash && openMedia(...location.hash.slice(1).split('/'));
+}
+
+function play(url) {
+  const v = $('#player');
+  if (HlsPlayer) { HlsPlayer.destroy(); HlsPlayer = null; }
+  if (window.Hls && Hls.isSupported()) {
+    HlsPlayer = new Hls();
+    HlsPlayer.loadSource(url);
+    HlsPlayer.attachMedia(v);
+    HlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => v.play());
+  } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+    v.src = url; v.play();
+  }
+}
+
+$('#searchbox').addEventListener('keydown', e => e.key === 'Enter' && search());
+</script>
+</body>
+</html>

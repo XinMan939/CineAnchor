@@ -201,45 +201,50 @@ class Mapper:
         if self.verbose:
             print(*a, file=sys.stderr)
 
-    def resolve(self, media):
-        """TMDB 作品 -> 多源线路池 (去重后)"""
+    def _resolve_one(self, p, media):
+        """单 provider 解析: 返回 {provider, matched, lines, error, pool}.
+        供 Mapper.resolve 和 Phase 1 server 的并发调度复用."""
         keywords = self._keywords(media)
-        pool = {}  # url -> line info
-        stats = {}
-        for p in self.providers:
-            entry = {"provider": p.name, "matched": 0, "lines": 0, "error": None}
+        entry = {"provider": p.name, "matched": 0, "lines": 0, "error": None, "pool": {}}
+        hits = []  # (score, vod): 同站多版本(不同清晰度)全部入池
+        for kw in keywords:
             try:
-                hits = []  # (score, vod): 同站多版本(不同清晰度)全部入池
-                for kw in keywords:
-                    try:
-                        data = p.search(kw)
-                    except Exception as e:
-                        entry["error"] = str(e)
-                        break
-                    for vod in data.get("list", []):
-                        s = match_score(media, vod)
-                        if s >= 2:
-                            hits.append((s, vod))
-                if hits:
-                    for score, best in sorted(hits, key=lambda x: -x[0]):
-                        for line_name, eps in parse_episodes(best).items():
-                            entry["lines"] += 1
-                            for ep_name, url in eps:
-                                key = url.replace("http://", "https://")
-                                if key not in pool:
-                                    pool[key] = {
-                                        "provider": p.name, "line": line_name,
-                                        "episode": ep_name, "url": url, "score": score,
-                                    }
-                    entry["matched"] = 1
-                    top = sorted(hits, key=lambda x: -x[0])[0][1]
-                    self._log(f"  [{p.name}] 命中 {len(hits)} 条: {top.get('vod_name')} ({top.get('vod_year')})")
-                else:
-                    self._log(f"  [{p.name}] 未匹配" + (f" error={entry['error']}" if entry["error"] else ""))
+                data = p.search(kw)
             except Exception as e:
                 entry["error"] = str(e)
-                self._log(f"  [{p.name}] 异常: {e}")
-            stats[p.name] = entry
+                break
+            for vod in data.get("list", []):
+                s = match_score(media, vod)
+                if s >= 2:
+                    hits.append((s, vod))
+        if hits:
+            for score, best in sorted(hits, key=lambda x: -x[0]):
+                for line_name, eps in parse_episodes(best).items():
+                    entry["lines"] += 1
+                    for ep_name, url in eps:
+                        key = url.replace("http://", "https://")
+                        if key not in entry["pool"]:
+                            entry["pool"][key] = {
+                                "provider": p.name, "line": line_name,
+                                "episode": ep_name, "url": url, "score": score,
+                            }
+            entry["matched"] = 1
+            top = sorted(hits, key=lambda x: -x[0])[0][1]
+            self._log(f"  [{p.name}] 命中 {len(hits)} 条: {top.get('vod_name')} ({top.get('vod_year')})")
+        else:
+            self._log(f"  [{p.name}] 未匹配" + (f" error={entry['error']}" if entry["error"] else ""))
+        return entry
+
+    def resolve(self, media):
+        """TMDB 作品 -> 多源线路池 (去重后)"""
+        pool = {}
+        stats = {}
+        for p in self.providers:
+            entry = self._resolve_one(p, media)
+            for url, info in entry["pool"].items():
+                if url not in pool:
+                    pool[url] = info
+            stats[p.name] = {k: entry[k] for k in ("provider", "matched", "lines", "error")}
         return pool, stats
 
     @staticmethod
