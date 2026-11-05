@@ -35,7 +35,13 @@
   .poster .t { font-size: 13px; margin-top: 6px; overflow: hidden;
                white-space: nowrap; text-overflow: ellipsis; }
   .poster .y { font-size: 11px; color: #7d8590; }
+  .poster .r { font-size: 11px; color: #e3b341; }
   #hint { padding: 60px; text-align: center; color: #7d8590; font-size: 14px; }
+  #trending-wrap { padding: 20px 24px 0; }
+  #trending-wrap h2 { font-size: 15px; color: #7d8590; margin-bottom: 12px; }
+  #trending { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
+  select.season { background: #161b22; color: #e6edf3; border: 1px solid #30363d;
+                   border-radius: 6px; padding: 3px 8px; font-size: 12px; }
   button.reload { background:none; border:1px solid #30363d; color:#7d8590; font-size:12px;
                   padding:4px 10px; border-radius:6px; cursor:pointer; }
 </style>
@@ -46,8 +52,13 @@
   <input id="searchbox" placeholder="搜索作品名，回车…">
 </header>
 
-<div id="hint">搜索一部作品 → 点海报 → 等待线路聚合 → 播放</div>
+<div id="hint" style="display:none"></div>
 <div id="results" style="display:none"></div>
+
+<div id="trending-wrap">
+  <h2>🔥 最新上线</h2>
+  <div id="trending"></div>
+</div>
 
 <main id="main" style="display:none">
   <div id="player-pane">
@@ -62,6 +73,24 @@ const API = location.origin.startsWith('http') && !location.port || location.por
 const $ = s => document.querySelector(s);
 
 let HlsPlayer = null;
+
+// 首页 trending
+(async () => {
+  try {
+    const r = await fetch(`${API}/api/v1/trending`);
+    const d = await r.json();
+    const box = $('#trending');
+    d.items.slice(0, 18).forEach(i => {
+      const el = document.createElement('div');
+      el.className = 'poster';
+      el.innerHTML = `<img src="${i.poster || ''}" loading="lazy">
+                      <div class="t">${i.title}</div>
+                      <div class="y">${i.year || ''} <span class="r">★${i.rating || ''}</span></div>`;
+      el.onclick = () => openMedia(i.type, i.tmdb_id, i.title);
+      box.appendChild(el);
+    });
+  } catch (e) { console.warn('trending failed', e); }
+})();
 
 async function search() {
   const q = $('#searchbox').value.trim();
@@ -87,11 +116,13 @@ async function search() {
   });
 }
 
-async function openMedia(type, id, title) {
+async function openMedia(type, id, title, season) {
+  $('#trending-wrap').style.display = 'none';
   $('#results').style.display = 'none';
   $('#main').style.display = 'grid';
   $('#lines').innerHTML = '<div class="card"><h3>线路聚合中…</h3><div class="meta">并发请求采集站</div></div>';
-  const r = await fetch(`${API}/api/v1/sources/${type}/${id}`);
+  season = season || 0;
+  const r = await fetch(`${API}/api/v1/sources/${type}/${id}?season=${season}`);
   const d = await r.json();
   renderLines(d);
 }
@@ -99,14 +130,18 @@ async function openMedia(type, id, title) {
 function renderLines(d) {
   document.title = `${d.media.title} · CineAnchor`;
   const box = $('#lines');
+  const seasonSel = d.media.type === 'tv' && d.media.seasons > 1
+    ? `<select class="season" onchange="openMedia('${d.media.type}', ${d.media.tmdb_id}, '${d.media.title}', +this.value)">
+         ${Array.from({length: d.media.seasons}, (_, i) =>
+           `<option value="${i+1}" ${d.media.season === i+1 ? 'selected' : ''}>第 ${i+1} 季</option>`).join('')}
+       </select>` : '';
   box.innerHTML = `
     <div class="card">
-      <h3>${d.media.title} (${d.media.year})</h3>
+      <h3>${d.media.title} (${d.media.year}) ${seasonSel}</h3>
       <div class="meta">${d.media.overview ? d.media.overview.slice(0, 100) + '…' : ''}</div>
     </div>
     <div class="card">
-      <h3>播放线路 <span class="meta">${d.lines.length} 条</span>
-        <button class="reload" onclick="refresh()">↻ 强制刷新</button></h3>
+      <h3>播放线路 <span class="meta">${d.lines.length} 条</span></h3>
     </div>`;
   if (!d.lines.length) {
     box.innerHTML += '<div class="card"><div class="meta">暂无可用线路</div></div>';
@@ -126,10 +161,7 @@ function renderLines(d) {
   play(d.lines[0].url);  // 默认播第一条
 }
 
-function refresh() {
-  // 简化: 重新走一遍 (缓存过期前 force 逻辑由后端 ?force=1 控制)
-  location.hash && openMedia(...location.hash.slice(1).split('/'));
-}
+function refresh() {}
 
 function play(url) {
   const v = $('#player');

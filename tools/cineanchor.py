@@ -57,10 +57,10 @@ class Tmdb:
             headers={"Authorization": f"Bearer {self.token}"},
         )
 
-    def details(self, media_type, tmdb_id):
-        """作品元数据: 这是整个系统的主键记录"""
+    def details(self, media_type, tmdb_id, season=None):
+        """作品元数据: 这是整个系统的主键记录. season 时补季信息"""
         d = self._get(f"{media_type}/{tmdb_id}")
-        return {
+        out = {
             "tmdb_id": tmdb_id,
             "type": media_type,
             "title": d.get("title") or d.get("name"),
@@ -70,6 +70,19 @@ class Tmdb:
             "overview": d.get("overview"),
             "seasons": d.get("number_of_seasons"),
         }
+        if media_type == "tv" and season is not None:
+            try:
+                s = self._get(f"tv/{tmdb_id}/season/{season}")
+                out["season"] = season
+                out["season_name"] = s.get("name")
+                out["season_year"] = (s.get("air_date") or "")[:4]
+                out["season_episodes"] = s.get("season_number") and len(s.get("episodes", []))
+                # 季年份覆盖年份: 匹配采集站里 "XXX第二季(2025)" 这种条目
+                if out["season_year"]:
+                    out["year"] = out["season_year"]
+            except Exception as e:
+                print(f"  [warn] season {season} 信息获取失败: {e}", file=sys.stderr)
+        return out
 
     def search(self, keyword, year=None, media_type=None):
         """标题+年份 -> TMDB ID. media_type: movie/tv/None(都搜)"""
@@ -146,18 +159,27 @@ def parse_year(vod_year):
 
 
 def match_score(media, vod):
-    """0=不匹配, 1=仅标题, 2=标题+年份, 3=tmdb_id 直连"""
+    """0=不匹配, 1=仅标题/存疑, 2=标题+年份, 3=tmdb_id 直连
+    media 可携带 season (int): 季数路由——采集站条目季数与之不符直接 0 分"""
     # ① tmdb_id 直连 (部分优质采集站 vod_remarks/vod_en 里带)
     for field in ("tmdb_id", "vod_tmdb_id"):
         raw = str(vod.get(field) or "").strip()
         if raw and raw == str(media["tmdb_id"]):
             return 3
+    # ①.5 季数路由: 条目显式标了季且与请求季不符 -> 排除
+    want_season = media.get("season")
+    vod_season = extract_season(vod.get("vod_name") or "")
+    if want_season is not None and vod_season is not None and vod_season != want_season:
+        return 0
     # ② 标题+年份
     if normalize_title(vod.get("vod_name") or "") != normalize_title(media["title"]):
         return 0
     vy, my = parse_year(vod.get("vod_year")), parse_year(media["year"])
     if vy and my and abs(vy - my) <= 1:
         return 2
+    # 无季标记的条目对 season>1 的请求是存疑的 (可能是第一季或合集), 降为 1 不入池
+    if want_season is not None and want_season > 1 and vod_season is None:
+        return 1
     return 1
 
 
@@ -249,11 +271,21 @@ class Mapper:
 
     @staticmethod
     def _keywords(media):
-        """搜索关键字: 中文名 / 原名 / 原名+年份"""
-        kws = [media["title"]]
+        """搜索关键字: 中文名 / 原名; 请求季>1 时优先带季名, 兜底裸标题"""
+        kws = []
+        season = media.get("season")
+        base = [media["title"]]
         if media.get("original_title") and media["original_title"] != media["title"]:
-            kws.append(media["original_title"])
-        return kws
+            base.append(media["original_title"])
+        if season is not None and season > 1:
+            cn_num = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五",
+                      6: "六", 7: "七", 8: "八", 9: "九", 10: "十"}.get(season, str(season))
+            for t in base:
+                kws.append(f"{t} 第{cn_num}季")
+                kws.append(f"{t} 第{season}季")
+        kws.extend(base)
+        # 去重保序
+        return list(dict.fromkeys(kws))
 
 
 # ----------------------------------------------------------------------------
@@ -281,6 +313,10 @@ MOCK_VOD_RESPONSE = {
             "vod_id": 105, "vod_name": "随便什么名字", "vod_year": "2020",
             "tmdb_id": "872585",
             "vod_play_url": "直连线路$https://mock.site/m/105/1.m3u8"
+        },
+        {  # 季数路由: 第一季裸标题条目 (无季标记)
+            "vod_id": 106, "vod_name": "最后生还者", "vod_year": "2023",
+            "vod_play_url": "线路A$https://mock.site/t/106/01.m3u8"
         },
     ]
 }
@@ -325,6 +361,16 @@ def selftest():
     check(set(eps.keys()) == {"优质线路", "备用线路"}, "多线路分组")
     check(len(eps["优质线路"]) == 2 and eps["优质线路"][0][0] == "第01集", "集名+URL 切分")
 
+    print("[4.5] 季数路由")
+    tlou = {"tmdb_id": "100088", "title": "最后生还者", "year": "2023"}
+    tlou_s1 = {**tlou, "season": 1}
+    tlou_s2 = {**tlou, "season": 2, "year": "2025"}  # 季年份覆盖
+    check(match_score(tlou_s1, vods[106]) == 2, "season=1: 裸标题条目 -> score 2")
+    check(match_score(tlou_s2, vods[106]) == 1, "season=2: 裸标题(可能是S1/合集) -> 降级 score 1")
+    check(match_score(tlou_s2, vods[102]) == 2, "season=2: '第二季'条目+年份 -> score 2")
+    check(match_score(tlou_s1, vods[102]) == 0, "season=1: '第二季'条目 -> 排除 score 0")
+    check(match_score(tlou, vods[102]) == 1, "未指定季: '第二季'年份不符 -> 存疑 1")
+
     print("[5] 端到端: TMDB 作品 -> mock 线路池")
     mapper = Mapper([MockProvider()], verbose=False)
     pool, stats = mapper.resolve(media)
@@ -360,6 +406,7 @@ def main():
     p_resolve = sub.add_parser("resolve", help="TMDB ID -> 多源线路池")
     p_resolve.add_argument("type", choices=["movie", "tv"])
     p_resolve.add_argument("tmdb_id")
+    p_resolve.add_argument("--season", type=int, help="剧集季数 (季数路由)")
 
     p_search = sub.add_parser("search", help="标题 -> TMDB ID")
     p_search.add_argument("keyword")
@@ -382,7 +429,7 @@ def main():
         return
 
     if args.cmd == "resolve":
-        media = tmdb.details(args.type, args.tmdb_id)
+        media = tmdb.details(args.type, args.tmdb_id, season=getattr(args, "season", None))
         print(f"作品锚点: {media['title']} ({media['year']}) tmdb_id={media['tmdb_id']}", file=sys.stderr)
         providers = [MacCmsProvider(p["name"], p["api"]) for p in cfg.get("providers", [])]
         if not providers:

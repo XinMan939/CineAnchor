@@ -129,26 +129,53 @@ def _search_both(q, year):
     return out[:20]
 
 
-async def tmdb_detail_cached(media_type, tmdb_id):
-    key = f"tmdb:detail:{media_type}:{tmdb_id}"
+async def tmdb_detail_cached(media_type, tmdb_id, season=None):
+    key = f"tmdb:detail:{media_type}:{tmdb_id}:{season or ''}"
     hit = CACHE.get(key)
     if hit is not None:
         return hit
-    d = await aio(TMDB.details, media_type, tmdb_id)
+    d = await aio(TMDB.details, media_type, tmdb_id, season)
     d["poster_full"] = POSTER_BASE + d["poster"] if d.get("poster") else None
     CACHE.set(key, d, TMDB_CACHE_TTL)
     return d
 
 
-async def resolve_sources_cached(media_type, tmdb_id, force=False):
+async def tmdb_trending_cached(window="week"):
+    """首页: TMDB trending 榜单 (最新上线海报墙)"""
+    key = f"tmdb:trending:{window}"
+    hit = CACHE.get(key)
+    if hit is not None:
+        return hit
+    out = []
+    for t in ("movie", "tv"):
+        try:
+            r = await aio(TMDB._get, f"trending/{t}/{window}")
+            for it in r.get("results", []):
+                out.append({
+                    "tmdb_id": it["id"],
+                    "type": t,
+                    "title": it.get("title") or it.get("name"),
+                    "year": (it.get("release_date") or it.get("first_air_date") or "")[:4],
+                    "poster": POSTER_BASE + it["poster_path"] if it.get("poster_path") else None,
+                    "rating": round(it.get("vote_average", 0), 1),
+                    "popularity": it.get("popularity", 0),
+                })
+        except Exception:
+            continue
+    out.sort(key=lambda x: -x["popularity"])
+    CACHE.set(key, out, 12 * 3600)  # 榜单 12h
+    return out
+
+
+async def resolve_sources_cached(media_type, tmdb_id, season=None, force=False):
     """线路池: 先查缓存, miss 则并发聚合所有 provider"""
-    key = f"sources:{media_type}:{tmdb_id}"
+    key = f"sources:{media_type}:{tmdb_id}:{season or ''}"
     if not force:
         hit = CACHE.get(key)
         if hit is not None:
             return hit, True
 
-    media = await tmdb_detail_cached(media_type, tmdb_id)
+    media = await tmdb_detail_cached(media_type, tmdb_id, season)
     mapper = Mapper(PROVIDERS, verbose=False)
 
     # 并发: 每个 provider 独立超时, 谁慢切谁
@@ -206,24 +233,32 @@ async def api_search(q: str = Query(..., min_length=1), year: str = ""):
 
 
 @app.get("/api/v1/detail/{media_type}/{tmdb_id}")
-async def api_detail(media_type: str, tmdb_id: int):
-    """TMDB 详情页元数据"""
+async def api_detail(media_type: str, tmdb_id: int, season: int = 0):
+    """TMDB 详情页元数据 (tv 可带 season)"""
     if media_type not in ("movie", "tv"):
         raise HTTPException(400, "media_type must be movie|tv")
     try:
-        return await tmdb_detail_cached(media_type, tmdb_id)
+        return await tmdb_detail_cached(media_type, tmdb_id, season or None)
     except Exception as e:
         raise HTTPException(502, f"TMDB error: {e}")
 
 
+@app.get("/api/v1/trending")
+async def api_trending(window: str = "week"):
+    """首页最新上线: TMDB trending (movie+tv 合并)"""
+    if window not in ("day", "week"):
+        raise HTTPException(400, "window must be day|week")
+    return {"items": await tmdb_trending_cached(window)}
+
+
 @app.get("/api/v1/sources/{media_type}/{tmdb_id}")
-async def api_sources(media_type: str, tmdb_id: int, force: bool = False):
-    """核心接口: TMDB ID -> 多源聚合线路池"""
+async def api_sources(media_type: str, tmdb_id: int, season: int = 0, force: bool = False):
+    """核心接口: TMDB ID -> 多源聚合线路池 (tv 可带 season 路由到对应季)"""
     if media_type not in ("movie", "tv"):
         raise HTTPException(400, "media_type must be movie|tv")
     if not PROVIDERS:
         raise HTTPException(503, "config.json 未配置任何采集站 provider")
-    payload, from_cache = await resolve_sources_cached(media_type, tmdb_id, force)
+    payload, from_cache = await resolve_sources_cached(media_type, tmdb_id, season or None, force)
     return {"from_cache": from_cache, **payload}
 
 
