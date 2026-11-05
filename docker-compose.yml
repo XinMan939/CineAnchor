@@ -10,6 +10,18 @@ services:
       - ./data:/app/data
     environment:
       - TZ=Asia/Shanghai
+      # ---- 容器代理 (访问 TMDB 用) ----
+      # 容器默认不继承宿主机代理, 必须显式指定。
+      # host.docker.internal 是 Docker 官方的"宿主机"别名 (Mac/Windows 直接可用)。
+      # 本机 Clash Verge 混合端口是 7897 (Clash 默认 7890 / V2ray 常见 10809, 按实际改)。
+      # 注意: 宿主机代理需监听 0.0.0.0 或至少允许局域网连接, 只绑 127.0.0.1 容器够不着。
+      # 若走 TMDB 反代方案 (config.json 里配 tmdb_host), 则不需要这些, 保持注释。
+      # - HTTP_PROXY=http://host.docker.internal:7897
+      # - HTTPS_PROXY=http://host.docker.internal:7897
+      # - NO_PROXY=localhost,127.0.0.1,.tmdb.org,image.tmdb.org,360zy.com,lziapi.com,bfzyapi.com,ffzyapi.com,dyttzyapi.com
+    # Linux 下 host.docker.internal 不可用, 需要这句把它指到宿主机网关
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # 健康检查: 容器内自检 (不走 nginx)
     healthcheck:
       test: ["CMD", "python", "-c",
@@ -24,7 +36,9 @@ services:
     container_name: cineanchor-nginx
     restart: unless-stopped
     ports:
-      - "80:80"          # 上 SSL 证书时改 443:443 并启用 conf 里的 https 段
+      # ⚠️ 本机 80 已被 Watt Toolkit(Steam++)占用, 本地验证用 8080 映射;
+      # 服务器上无冲突, 可改回 "80:80" (配 HTTPS 时再加 443:443)。
+      - "8080:80"          # 上 SSL 证书时改 443:443 并启用 conf 里的 https 段
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       # 上证书时解开 (路径按实际证书位置调整):

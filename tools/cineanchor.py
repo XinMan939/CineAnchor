@@ -226,8 +226,12 @@ def parse_episodes(vod):
 QUALITY_PATTERNS = [
     (re.compile(r"(4k|2160p|uhd|杜比|蓝光原盘|remux)", re.I), 40),
     (re.compile(r"(1080p|1080i|蓝光|blu-?ray|web-?dl)", re.I), 30),
-    (re.compile(r"(720p|hd|高清)", re.I), 20),
-    (re.compile(r"(抢先|枪版|ts版|cam)", re.I), -10),
+    (re.compile(r"720p|高清", re.I), 20),
+    # 枪版检测必须先于 hd: 否则 hdts 的 "hd" 前缀会先拿 20 分。
+    # 注意不能用 \b 词边界 —— 中文字符属于 \w, "HD中字"/"CAM版" 永远不成立,
+    # 改用 ASCII 前后瞻 (?<![a-z]) / (?![a-z])。
+    (re.compile(r"抢先|枪版|ts版|(?<![a-z])ts(?![a-z])|(?<![a-z])hd[\s-]?(?:ts|tc)|(?<![a-z])cam|(?<![a-z])tc(?![a-z])", re.I), -10),
+    (re.compile(r"(?<![a-z])hd", re.I), 20),
 ]
 
 
