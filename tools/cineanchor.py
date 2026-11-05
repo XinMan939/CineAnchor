@@ -162,20 +162,23 @@ def match_score(media, vod):
 
 
 def parse_episodes(vod):
-    """vod_play_url 格式: '第01集$url1#第02集$url2;;;线路2名$第01集$u1#...'
-    返回 dict[线路名, [(集名, url), ...]]"""
+    """vod_play_url 格式: '线路名$集名$url1#集名$url2;;;线路2名$集名$u1#...'
+    单集电影可能只有 '集名$url' (如 '奥本海默$https://..'). 返回 dict[线路名, [(集名,url),...]]"""
     lines = {}
     raw = vod.get("vod_play_url") or ""
     for group in raw.split(";;;"):
         group = group.strip()
-        if not group or "$" not in group:
+        if not group:
             continue
-        parts = group.split("$", 1)
-        if "#" in parts[0] and "http" in parts[1]:
-            # 线路名里不可能有#, 但集数肯定有 http -> 说明这段是"集名$url"且无线路名头
+        # 线路头判断: '线路名$集名$url...' -> parts[1] 是集名(非URL)
+        # 无线路头: '集名$url#集名$url...' -> parts[1] 直接是 URL
+        parts = group.split("$")
+        if len(parts) >= 3 and not parts[1].startswith(("http", "//")):
+            line_name, eps_str = parts[0], group[len(parts[0]) + 1:]
+        elif len(parts) >= 2:
             line_name, eps_str = "默认线路", group
         else:
-            line_name, eps_str = parts[0], parts[1]
+            continue
         eps = []
         for ep in eps_str.split("#"):
             ep = ep.strip()
@@ -185,7 +188,7 @@ def parse_episodes(vod):
             if url.startswith(("http", "//")):
                 eps.append((name, url))
         if eps:
-            lines[line_name] = eps
+            lines[line_name or "默认线路"] = eps
     return lines
 
 

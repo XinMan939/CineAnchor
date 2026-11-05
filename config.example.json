@@ -3,8 +3,12 @@
   "tmdb_host": "https://api.tmdb.org",
   "providers": [
     {
-      "name": "示例站",
-      "api": "https://你的采集站/api.php/provide/vod"
+      "name": "360",
+      "api": "https://360zy.com/api.php/provide/vod"
+    },
+    {
+      "name": "天涯",
+      "api": "https://tyyszy.com/api.php/provide/vod"
     }
   ]
 }
