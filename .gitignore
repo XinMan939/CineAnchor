@@ -1,0 +1,10 @@
+# TMDB 凭证（敏感，勿提交）
+config.json
+
+# Python
+__pycache__/
+*.pyc
+
+# 输出
+output/
+*.log

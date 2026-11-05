@@ -1,0 +1,10 @@
+{
+  "tmdb_token": "填入你的 TMDB API 读访问令牌 (Bearer token)",
+  "tmdb_host": "https://api.tmdb.org",
+  "providers": [
+    {
+      "name": "示例站",
+      "api": "https://你的采集站/api.php/provide/vod"
+    }
+  ]
+}
