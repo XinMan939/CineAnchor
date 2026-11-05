@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>hls diag</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+</head>
+<body>
+<video id="v" controls playsinline></video>
+<pre id="log" style="color:#fff;background:#000;padding:8px;font-size:12px;white-space:pre-wrap"></pre>
+<script>
+const log = (msg) => { document.getElementById('log').textContent += msg + '\n'; console.log(msg); };
+const v = document.getElementById('v');
+const url = new URLSearchParams(location.search).get('u') ||
+  'https://c1.rrcdnbf5.com/video/aobenhaimo/HD/index.m3u8';
+log('TEST URL: ' + url);
+log('Hls present: ' + !!window.Hls + ' isSupported: ' + (window.Hls ? Hls.isSupported() : 'n/a'));
+log('UA: ' + navigator.userAgent);
+if (window.Hls && Hls.isSupported()) {
+  const h = new Hls({ debug: false });
+  h.on(Hls.Events.MEDIA_ATTACHED, () => log('E: MEDIA_ATTACHED'));
+  h.on(Hls.Events.MANIFEST_LOADED, (e, d) => log('E: MANIFEST_LOADED levels=' + d.levels.length +
+    ' firstCodec=' + (d.levels[0] && d.levels[0].videoCodec ? d.levels[0].videoCodec : 'unknown')));
+  h.on(Hls.Events.MANIFEST_PARSED, (e, d) => log('E: MANIFEST_PARSED levels=' + d.levels.length));
+  h.on(Hls.Events.LEVEL_LOADED, (e, d) => log('E: LEVEL_LOADED level=' + d.level + ' details.segments=' + (d.details ? d.details.fragments.length : '?')));
+  h.on(Hls.Events.FRAG_BUFFERED, (e, d) => log('E: FRAG_BUFFERED sn=' + (d.frag ? d.frag.sn : '?')));
+  h.on(Hls.Events.BUFFER_CODECS, (e, d) => {
+    log('E: BUFFER_CODECS video=' + (d.video ? d.video.codec : 'NONE!') + ' audio=' + (d.audio ? d.audio.codec : 'NONE!'));
+  });
+  h.on(Hls.Events.ERROR, (e, d) => log('E: ERROR!! type=' + d.type + ' details=' + d.details +
+    (d.fatal ? ' FATAL' : '') + ' msg=' + (d.error ? d.error.message : '')));
+  h.on(Hls.Events.INIT_PTS_FOUND, () => log('E: INIT_PTS_FOUND'));
+  h.attachMedia(v);
+  h.loadSource(url);
+  v.play().catch(e => log('play() rejected: ' + e.message));
+  let t0 = Date.now();
+  setInterval(() => {
+    const buf = v.buffered;
+    const len = buf.length ? (buf.end(buf.length - 1) - v.currentTime) : 0;
+    log(`t=${((Date.now()-t0)/1000).toFixed(1)}s state: ready=${v.readyState} videoWidth=${v.videoWidth} videoHeight=${v.videoHeight} paused=${v.paused} buffered=${len.toFixed(1)}s`);
+  }, 3000);
+} else {
+  log('Hls not supported, native? ' + v.canPlayType('application/vnd.apple.mpegurl'));
+}
+</script>
+</body>
+</html>

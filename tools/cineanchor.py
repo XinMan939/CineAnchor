@@ -214,6 +214,10 @@ def parse_episodes(vod):
                     continue
                 name, url = sub.rsplit("$", 1)
                 if url.startswith(("http", "//")):
+                    # 过滤 HTML 播放页 (/share/ 路径返回的是网页不是流, hls.js 塞进去
+                    # 会出"有声无画"/黑屏). 同线路的 index.m3u8 直链会保留.
+                    if "/share/" in url:
+                        continue
                     eps.append((name, url))
         if eps:
             lines[line_name or "默认线路"] = eps

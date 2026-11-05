@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CineAnchor · 影锚</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script src="/hls.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; }
   body { font-family: -apple-system, "Segoe UI", "PingFang SC", sans-serif;
@@ -92,6 +92,23 @@
 const API = location.origin.startsWith('http') && !location.port || location.port === '8787'
   ? `${location.protocol}//${location.hostname}:8787` : '';
 const $ = s => document.querySelector(s);
+
+// 轻量提示条
+function toast(msg) {
+  let t = $('#toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'background:#30363d;color:#e6edf3;padding:10px 18px;border-radius:8px;' +
+      'font-size:13px;z-index:999;box-shadow:0 4px 12px #0008';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.style.display = 'none', 4000);
+}
 
 let HlsPlayer = null;
 
@@ -237,8 +254,23 @@ function play(url) {
     HlsPlayer.loadSource(url);
     HlsPlayer.attachMedia(v);
     HlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => v.play());
+    // 有声无画兜底: 若 3 秒后仍无视频轨尺寸, 提示切换线路
+    HlsPlayer.on(Hls.Events.ERROR, (e, d) => {
+      if (d.fatal) {
+        console.warn('hls fatal:', d.type, d.details);
+        try { HlsPlayer.startLoad(); } catch (_) {}
+      }
+    });
+    clearTimeout(play._noVideoTimer);
+    play._noVideoTimer = setTimeout(() => {
+      if (v.readyState >= 2 && !v.videoWidth && !v.paused) {
+        toast('该线路有声音无画面？可能是 HEVC/H.265 编码，请切换其他线路');
+      }
+    }, 3000);
   } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
     v.src = url; v.play();
+  } else {
+    toast('当前浏览器不支持 HLS 播放，请换 Chrome/Edge 最新版');
   }
 }
 

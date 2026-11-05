@@ -403,6 +403,18 @@ async def web_index():
     raise HTTPException(404, "web/index.html not found")
 
 
+# 静态资源 (hls.min.js 等本地文件) —— web/ 下除 index.html 外全部可直读
+@app.get("/{filename}")
+async def web_static(filename: str):
+    # 防目录穿越: 只允许纯文件名
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(404)
+    f = WEB_DIR / filename
+    if f.is_file():
+        return FileResponse(f)
+    raise HTTPException(404, "not found")
+
+
 # ---------------------------------------------------------------------------
 # 入口
 # ---------------------------------------------------------------------------
