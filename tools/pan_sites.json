@@ -1,0 +1,200 @@
+{
+  "_source": "https://pan-site-monitor.vercel.app/api/data",
+  "_fetched": "2026-11-08T06:00",
+  "_note": "网盘影视聚合站镜像域名监控快照（含备用域名），非苹果CMS采集源",
+  "sites": [
+    {
+      "name": "玩偶",
+      "status": "success",
+      "best": "https://woggpan.888484.xyz",
+      "urls": [
+        {
+          "url": "https://woggpan.888484.xyz",
+          "latency": 0.65,
+          "has_keyword": true
+        },
+        {
+          "url": "https://www.wogg.net",
+          "latency": 0.8,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "木偶",
+      "status": "success",
+      "best": "https://www.muoua.top",
+      "urls": [
+        {
+          "url": "https://www.muoua.top",
+          "latency": 0.27,
+          "has_keyword": true
+        },
+        {
+          "url": "https://123.666291.xyz",
+          "latency": 0.27,
+          "has_keyword": true
+        },
+        {
+          "url": "https://333.333291.xyz",
+          "latency": 0.3,
+          "has_keyword": true
+        },
+        {
+          "url": "https://666.666291.xyz",
+          "latency": 1.09,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "蜡笔",
+      "status": "success",
+      "best": "http://tvpanpan.site",
+      "urls": [
+        {
+          "url": "http://tvpanpan.site",
+          "latency": 0.34,
+          "has_keyword": true
+        },
+        {
+          "url": "https://www.mmpanpan.site",
+          "latency": 0.63,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "闪电",
+      "status": "success",
+      "best": "http://shandian.blog",
+      "urls": [
+        {
+          "url": "http://shandian.blog",
+          "latency": 0.76,
+          "has_keyword": true
+        },
+        {
+          "url": "http://sd.sduc.site",
+          "latency": 1.1,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "多多",
+      "status": "success",
+      "best": "https://tv.214521.xyz",
+      "urls": [
+        {
+          "url": "https://tv.214521.xyz",
+          "latency": 0.54,
+          "has_keyword": true
+        },
+        {
+          "url": "https://tv.yydsys.cc",
+          "latency": 0.55,
+          "has_keyword": true
+        },
+        {
+          "url": "https://yydsys.de5.net",
+          "latency": 0.57,
+          "has_keyword": true
+        },
+        {
+          "url": "https://pan.yydsys.de",
+          "latency": 0.77,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "欧哥",
+      "status": "success",
+      "best": "https://ogkk.nxog.eu.org",
+      "urls": [
+        {
+          "url": "https://ogkk.nxog.eu.org",
+          "latency": 0.49,
+          "has_keyword": true
+        },
+        {
+          "url": "https://woog.430520.xyz",
+          "latency": 0.56,
+          "has_keyword": true
+        },
+        {
+          "url": "https://woog.nxog.eu.org",
+          "latency": 0.66,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "花卷",
+      "status": "success",
+      "best": "https://www.hjzhencai.top",
+      "urls": [
+        {
+          "url": "https://www.hjzhencai.top",
+          "latency": 0.52,
+          "has_keyword": true
+        },
+        {
+          "url": "https://www.huanjuanwp.shop",
+          "latency": 0.81,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "虎斑",
+      "status": "success",
+      "best": "http://103.40.14.172:16968",
+      "urls": [
+        {
+          "url": "http://103.40.14.172:16968",
+          "latency": 0.03,
+          "has_keyword": true
+        },
+        {
+          "url": "http://xhban.xyz:20720",
+          "latency": 0.03,
+          "has_keyword": true
+        },
+        {
+          "url": "http://38.76.197.172:16969",
+          "latency": 0.03,
+          "has_keyword": true
+        },
+        {
+          "url": "http://xhban.xyz",
+          "latency": 0.39,
+          "has_keyword": true
+        }
+      ]
+    },
+    {
+      "name": "小斑",
+      "status": "success",
+      "best": "http://38.76.197.172:12521",
+      "urls": [
+        {
+          "url": "http://38.76.197.172:12521",
+          "latency": 0.03,
+          "has_keyword": true
+        },
+        {
+          "url": "http://103.40.14.172:12512",
+          "latency": 0.03,
+          "has_keyword": true
+        },
+        {
+          "url": "http://xsayang.fun:12512",
+          "latency": 0.37,
+          "has_keyword": true
+        }
+      ]
+    }
+  ]
+}
