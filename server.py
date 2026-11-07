@@ -46,7 +46,7 @@ CFG = load_config(BASE / "config.json")
 
 TMDB_CACHE_TTL = 24 * 3600      # TMDB 元数据缓存 24h
 SOURCES_CACHE_TTL = 6 * 3600    # 线路池缓存 6h
-PROVIDER_TIMEOUT = 8           # 单源并发超时 8s
+PROVIDER_TIMEOUT = 20          # 单源并发超时 20s (翻页 5 页需要余量)
 CIRCUIT_THRESHOLD = 3          # 连续失败 N 次触发熔断
 CIRCUIT_COOLDOWN = 30 * 60     # 熔断冷却 30 分钟
 
@@ -343,6 +343,56 @@ async def api_trending(window: str = "week"):
     if window not in ("day", "week"):
         raise HTTPException(400, "window must be day|week")
     return {"items": await tmdb_trending_cached(window)}
+
+
+# ---------------------------------------------------------------------------
+# TMDB 图片代理 (TV/模拟器不直连 image.tmdb.org, 统一走后端)
+# GET /api/v1/img?path=/t/p/w500/xxx.jpg
+# 磁盘缓存 30 天, 命中直接回文件
+# ---------------------------------------------------------------------------
+IMG_CACHE_DIR = DATA_DIR / "img_cache"
+IMG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+IMG_CACHE_TTL = 30 * 24 * 3600
+
+
+def _img_cache_key(path: str) -> Path:
+    # path 形如 /t/p/w500/hash.jpg; 只留文件名做 key, 防目录穿越
+    name = path.rsplit("/", 1)[-1]
+    safe = "".join(c for c in name if c.isalnum() or c in "._-") or "blank"
+    return IMG_CACHE_DIR / safe
+
+
+def _fetch_img(path: str) -> bytes | None:
+    """同步拉 TMDB 图片 (urllib), 供 to_thread 调用"""
+    import urllib.request
+    url = f"https://image.tmdb.org{path}"
+    req = urllib.request.Request(url, headers={"User-Agent": "CineAnchor/0.1"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.read()
+    except Exception:
+        return None
+
+
+@app.get("/api/v1/img")
+async def api_img(path: str = Query(..., description="TMDB 图片路径 /t/p/w500/xxx.jpg")):
+    if not path.startswith("/t/p/"):
+        raise HTTPException(400, "path must start with /t/p/")
+    f = _img_cache_key(path)
+    # 命中且未过期
+    if f.exists() and f.stat().st_size > 0 and \
+            (time.time() - f.stat().st_mtime) < IMG_CACHE_TTL:
+        return FileResponse(f, media_type="image/jpeg")
+    data = await aio(_fetch_img, path)
+    if not data:
+        raise HTTPException(502, "image fetch failed")
+    try:
+        f.write_bytes(data)
+    except Exception:
+        pass  # 缓存写失败不影响本次返回
+    import io
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(io.BytesIO(data), media_type="image/jpeg")
 
 
 @app.get("/api/v1/latest")

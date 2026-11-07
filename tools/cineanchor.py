@@ -115,9 +115,20 @@ class MacCmsProvider:
         self.api_url = api_url.rstrip("/")
         self.timeout = timeout
 
-    def search(self, keyword):
-        url = f"{self.api_url}?ac=videolist&wd={urllib.parse.quote(keyword)}"
-        return http_get_json(url, timeout=self.timeout)
+    def search(self, keyword, max_pages=5):
+        """搜索并自动翻页. 热门词第一页常被新短剧霸榜, 正主在 2~4 页;
+        total<=20 说明只有一页, 不再翻. 返回聚合 dict."""
+        merged = {"list": [], "total": 0}
+        for pg in range(1, max_pages + 1):
+            url = f"{self.api_url}?ac=videolist&wd={urllib.parse.quote(keyword)}&pg={pg}"
+            data = http_get_json(url, timeout=self.timeout)
+            vods = data.get("list") or []
+            merged["list"].extend(vods)
+            merged["total"] = data.get("total") or 0
+            # 一页都没满/没有下一页数据 -> 停止翻页
+            if len(vods) < 20:
+                break
+        return merged
 
     def resolve(self, media):
         """TMDB 作品 -> 本站线路列表. 返回 list[dict]"""
