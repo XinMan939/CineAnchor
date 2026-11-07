@@ -2,25 +2,22 @@
   "tmdb_token": "填入你的 TMDB API 读访问令牌 (Bearer token)",
   "tmdb_host": "https://api.tmdb.org",
   "providers": [
-    {
-      "name": "360",
-      "api": "https://360zy.com/api.php/provide/vod"
-    },
-    {
-      "name": "量子",
-      "api": "http://cj.lziapi.com/api.php/provide/vod"
-    },
-    {
-      "name": "暴风",
-      "api": "https://bfzyapi.com/api.php/provide/vod"
-    },
-    {
-      "name": "非凡",
-      "api": "http://cj.ffzyapi.com/api.php/provide/vod"
-    },
-    {
-      "name": "电影天堂",
-      "api": "http://caiji.dyttzyapi.com/api.php/provide/vod"
-    }
+    {"name": "360", "api": "https://360zy.com/api.php/provide/vod"},
+    {"name": "量子", "api": "http://cj.lziapi.com/api.php/provide/vod"},
+    {"name": "暴风", "api": "https://bfzyapi.com/api.php/provide/vod"},
+    {"name": "非凡", "api": "http://cj.ffzyapi.com/api.php/provide/vod"},
+    {"name": "电影天堂", "api": "http://caiji.dyttzyapi.com/api.php/provide/vod"},
+    {"name": "极速", "api": "https://jszyapi.com/api.php/provide/vod"},
+    {"name": "红牛", "api": "https://www.hongniuzy2.com/api.php/provide/vod"},
+    {"name": "最大", "api": "https://api.zuidapi.com/api.php/provide/vod"},
+    {"name": "樱花", "api": "https://yhzy.cc/api.php/provide/vod"},
+    {"name": "刺桐", "api": "http://pg.cttv.vip/api.php/provide/vod"},
+    {"name": "飘零", "api": "https://p2100.net/api.php/provide/vod"},
+    {"name": "蜜源", "api": "https://iqiyizyapi.com/api.php/provide/vod"},
+    {"name": "魔都动漫", "api": "https://caiji.moduapi.cc/api.php/provide/vod"},
+    {"name": "如意", "api": "https://cj.rytvapi.com/api.php/provide/vod"},
+    {"name": "三八", "api": "https://vod38.com/api.php/provide/vod"},
+    {"name": "无尽", "api": "https://api.wujinapi.com/api.php/provide/vod"},
+    {"name": "爱蛋", "api": "https://lovedan.net/api.php/provide/vod"}
   ]
 }
