@@ -59,6 +59,24 @@
   .detail-hero .info .meta { font-size: 12px; color: #9ea7b3; }
   .overview { font-size: 13px; line-height: 1.7; color: #c9d1d9; }
   .ep-list { max-height: 420px; overflow-y: auto; }
+  /* ===== 响应式: 手机端适配 =====
+     桌面版 main 是 1fr 380px 双栏, 手机 400px 视口下 380px 固定栏会吃掉 94% 宽度,
+     播放器 (1fr) 被压成 ~20px 窄条 → 视频不可见但音频照播 = "有声音没窗口"。
+     窄屏改为单栏: 播放器在上, 线路列表在下。 */
+  @media (max-width: 900px) {
+    header { padding: 14px 16px; flex-wrap: wrap; }
+    header h1 { font-size: 17px; }
+    #searchbox { max-width: none; width: 100%; order: 2; }
+    main { grid-template-columns: 1fr; }          /* 双栏 → 单栏堆叠 */
+    #player-pane { padding: 12px; }
+    #lines { padding: 0 12px 24px; overflow-y: visible; }
+    .ep-list { max-height: none; }               /* 手机上线路列表直接展开, 不嵌套滚动 */
+    #results, section.block { padding: 14px 12px 0; }
+    section.block .grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+    .detail-hero .info img { width: 64px; }
+    .detail-hero .info h3 { font-size: 15px; }
+    #hint { padding: 30px 16px; }
+  }
 </style>
 </head>
 <body>
