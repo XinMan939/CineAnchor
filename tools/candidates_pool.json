@@ -550,5 +550,53 @@
     "api": "https://api.1080zyku.com/inc/apijson.php",
     "priority": 0,
     "note": "mine2轮-SSL中断判死"
+  },
+  {
+    "name": "小猫咪",
+    "api": "https://zy.xiaomaomi.cc/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-502判死"
+  },
+  {
+    "name": "黑木耳json",
+    "api": "https://json.heimuer.xyz/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-非JSON判死"
+  },
+  {
+    "name": "卧龙w",
+    "api": "https://wolongzyw.com/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-非JSON判死"
+  },
+  {
+    "name": "豆瓣资源db",
+    "api": "https://dbzy.com/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-超时判死"
+  },
+  {
+    "name": "樱花m3u8",
+    "api": "https://m3u8.apiyhzy.com/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-403判死"
+  },
+  {
+    "name": "如意cj",
+    "api": "https://cj.rycjapi.com/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-SSL中断判死"
+  },
+  {
+    "name": "魔都资源",
+    "api": "https://www.mdzyapi.com/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-魔都动漫同库马甲不入池"
+  },
+  {
+    "name": "非凡5",
+    "api": "http://ffzy5.tv/api.php/provide/vod",
+    "priority": 0,
+    "note": "librettv-tv轮-非非凡官方域马甲不入池"
   }
 ]
