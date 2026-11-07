@@ -159,7 +159,7 @@ def normalize_title(s):
     """标题归一化: 全角->半角, 去空白/标点, 小写"""
     s = s.translate({0xFF01: 0x21, 0xFF1A: 0x3A, 0xFF08: 0x28, 0xFF09: 0x29})
     s = re.sub(r"第.+季|[0-9一二三四五六七八九十]+季|season\s*\d+", "", s, flags=re.I)
-    s = re.sub(r"[\s\u3000·\-–—:：!！'\'\"?？,，.。()（）\[\]【】]", "", s)
+    s = re.sub(r"[\s\u3000·\-–—:：!！'\'\"?？,，.。()（）\[\]【】_]", "", s)
     return s.lower()
 
 
@@ -168,6 +168,31 @@ def parse_year(vod_year):
         return int(str(vod_year)[:4])
     except (ValueError, TypeError):
         return None
+
+
+# 品质后缀白名单: 标题之后允许出现的画质/版本词 (归一化后的小写形态)
+QUALITY_SUFFIX_RE = re.compile(
+    r"(?:4k|2160p|1080p?|720p?|蓝光|枪版|抢先版|ts版|hd|高清|中字|国语|粤语|原声|正片|完整版|修复版|纪念版|加长版|导演剪辑版|版|iimax?|imax?|3d)+"
+)
+
+
+def title_equal(vod_title, media_title):
+    """标题匹配: 完全相等, 或 vod 标题 = media 标题 + 合法后缀.
+    合法后缀两类: ① 纯 ASCII 字母数字 (双语标题的英文副题, 如 '沙丘2 Dune: Part Two');
+    ② 品质/版本词 (如 '狂飙（4K）'/'封神_枪版_').
+    中文描述性后缀 ('狂飙的蜗牛'/'狂飙之绝地反击') 属于不同影片, 拒绝."""
+    a, b = normalize_title(vod_title), normalize_title(media_title)
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    short, long_ = (a, b) if len(a) <= len(b) else (b, a)
+    if len(short) < 2 or not long_.startswith(short):
+        return False
+    rest = long_[len(short):]
+    if rest.isascii():
+        return rest.isalnum()
+    return bool(QUALITY_SUFFIX_RE.fullmatch(rest))
 
 
 def match_score(media, vod):
@@ -184,7 +209,7 @@ def match_score(media, vod):
     if want_season is not None and vod_season is not None and vod_season != want_season:
         return 0
     # ② 标题+年份
-    if normalize_title(vod.get("vod_name") or "") != normalize_title(media["title"]):
+    if not title_equal(vod.get("vod_name") or "", media["title"]):
         return 0
     vy, my = parse_year(vod.get("vod_year")), parse_year(media["year"])
     if vy and my and abs(vy - my) <= 1:

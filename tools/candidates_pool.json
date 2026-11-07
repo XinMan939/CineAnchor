@@ -1,0 +1,536 @@
+[
+ {
+  "name": "量子",
+  "api": "https://cj.lziapi.com/api.php/provide/vod/from/lzm3u8",
+  "priority": 1,
+  "note": "推荐"
+ },
+ {
+  "name": "非凡",
+  "api": "https://cj.ffzyapi.com/api.php/provide/vod/from/ffm3u8",
+  "priority": 1,
+  "note": "推荐"
+ },
+ {
+  "name": "天影",
+  "api": "https://wsyzy.cc/api.php/provide/vod/from/wysm3u8",
+  "priority": 2,
+  "note": "卡"
+ },
+ {
+  "name": "6度资源",
+  "api": "https://www.mdzyapi.com/api.php/provide/vod/from/lium3u8",
+  "priority": 2,
+  "note": ""
+ },
+ {
+  "name": "豆包",
+  "api": "https://dbzy.tv/api.php/provide/vod/from/dbm3u8",
+  "priority": 2,
+  "note": ""
+ },
+ {
+  "name": "猫眼",
+  "api": "https://api.maoyanapi.top/api.php/provide/vod/from/mym3u8",
+  "priority": 3,
+  "note": "压缩其他资源站，插播都没去，直接压进去"
+ },
+ {
+  "name": "索尼",
+  "api": "https://suoniapi.com/api.php/provide/vod/from/snm3u8",
+  "priority": 4,
+  "note": "有些资源比老太婆走路还慢"
+ },
+ {
+  "name": "OK资源",
+  "api": "https://api.okzyw.net/api.php/provide/vod",
+  "priority": 4,
+  "note": ""
+ },
+ {
+  "name": "快车",
+  "api": "https://caiji.kuaichezy.org/api.php/provide/vod",
+  "priority": 4,
+  "note": ""
+ },
+ {
+  "name": "闪电",
+  "api": "https://xsd.sdzyapi.com/api.php/provide/vod/from/sdm3u8",
+  "priority": 4,
+  "note": ""
+ },
+ {
+  "name": "丫丫（鸭鸭）",
+  "api": "https://cj.yayazy.net/api.php/provide/vod/from/yym3u8",
+  "priority": 4,
+  "note": ""
+ },
+ {
+  "name": "无尽",
+  "api": "http://api.wujinwszy.net/api.php/provide/vod",
+  "priority": 5,
+  "note": "无水印，但卡"
+ },
+ {
+  "name": "速播",
+  "api": "https://www.subozy.com/api.php/provide/vod",
+  "priority": 5,
+  "note": ""
+ },
+ {
+  "name": "豪华",
+  "api": "https://hhzyapi.com/api.php/provide/vod/from/hhm3u8",
+  "priority": 5,
+  "note": ""
+ },
+ {
+  "name": "光速",
+  "api": "https://api.guangsuapi.com/api.php/provide/vod/from/gsm3u8",
+  "priority": 5,
+  "note": ""
+ },
+ {
+  "name": "茅台",
+  "api": "https://caiji.maotai999.vip/api.php/provide/vod/from/mtm3u8",
+  "priority": 6,
+  "note": ""
+ },
+ {
+  "name": "13大众",
+  "api": "http://cdn.dzzyapi.com/api.php/provide/vod",
+  "priority": 6,
+  "note": "仅支持HTTP"
+ },
+ {
+  "name": "如意",
+  "api": "https://www.ryzy5.tv/api.php/provide/vod",
+  "priority": 7,
+  "note": "规则变动频繁"
+ },
+ {
+  "name": "天繁",
+  "api": "https://caiji.dyttzyapi.com/api.php/provide/vod/from/dyttm3u8",
+  "priority": 7,
+  "note": "IP验证无法播放，开全局代理或返回原始链接"
+ },
+ {
+  "name": "西瓜",
+  "api": "https://xgzy.tv/api.php/provide/vod",
+  "priority": 7,
+  "note": ""
+ },
+ {
+  "name": "蓝光",
+  "api": "https://lgzyz.xyz/api.php/provide/vod",
+  "priority": 5,
+  "note": "新增，4K资源"
+ },
+ {
+  "name": "魔都",
+  "api": "https://www.moduzy.cc/api.php/provide/vod",
+  "priority": 5,
+  "note": "新增"
+ },
+ {
+  "name": "看看",
+  "api": "https://kankan01.com/api.php/provide/vod",
+  "priority": 5,
+  "note": "新增"
+ },
+ {
+  "name": "好花",
+  "api": "https://www.haohuazy.com/api.php/provide/vod",
+  "priority": 5,
+  "note": "新增"
+ },
+ {
+  "name": "电影天堂",
+  "api": "https://dyttzyw.tv/api.php/provide/vod",
+  "priority": 5,
+  "note": "新增"
+ },
+ {
+  "name": "爱奇艺资",
+  "api": "https://iqiyizy.cc/api.php/provide/vod",
+  "priority": 6,
+  "note": "新增"
+ },
+ {
+  "name": "牛牛6",
+  "api": "https://niuniuzy6.com/api.php/provide/vod",
+  "priority": 6,
+  "note": "新增"
+ },
+ {
+  "name": "蓝志",
+  "api": "https://www.lzzy.tv/api.php/provide/vod",
+  "priority": 6,
+  "note": "新增"
+ },
+ {
+  "name": "天逸",
+  "api": "https://tyyszy.com/api.php/provide/vod",
+  "priority": 6,
+  "note": "新增"
+ },
+ {
+  "name": "聚合资源",
+  "api": "https://vod.korge.cn/api.php/provide/vod",
+  "priority": 1,
+  "note": "官方推荐"
+ },
+ {
+  "name": "华为吧",
+  "api": "https://cjhwba.com/api.php/provide/vod",
+  "priority": 2,
+  "note": "官方推荐"
+ },
+ {
+  "name": "黑木耳资源",
+  "api": "https://json02.heimuer.xyz/api.php/provide/vod",
+  "priority": 2,
+  "note": "官方推荐"
+ },
+ {
+  "name": "ikun资源",
+  "api": "https://ikunzyapi.com/api.php/provide/vod",
+  "priority": 2,
+  "note": "官方推荐"
+ },
+ {
+  "name": "1080zyku",
+  "api": "https://api.1080zyku.com/inc/api_mac10.php",
+  "priority": 2,
+  "note": "官方推荐"
+ },
+ {
+  "name": "卧龙资源",
+  "api": "https://collect.wolongzy.cc/api.php/provide/vod",
+  "priority": 2,
+  "note": "官方推荐"
+ },
+ {
+  "name": "海外看",
+  "api": "https://haiwaikan.com/api.php/provide/vod",
+  "priority": 6,
+  "note": "海外资源"
+ },
+ {
+  "name": "刺桐资源",
+  "api": "http://ys9.cttv.vip/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "业余资源",
+  "api": "https://yyff.540734621.xyz/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "华为吧2",
+  "api": "https://hw8.live/api.php/provide/vod",
+  "priority": 7,
+  "note": "备用线路"
+ },
+ {
+  "name": "小黄人",
+  "api": "https://iqyi.xiaohuangrenhtv.com/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "U酷资源",
+  "api": "https://api.ukuapi.com/api.php/provide/vod",
+  "priority": 6,
+  "note": "JSON接口"
+ },
+ {
+  "name": "四九资源",
+  "api": "https://49zyw.com/api.php/provide/vod",
+  "priority": 6,
+  "note": "JSON接口"
+ },
+ {
+  "name": "快看资源",
+  "api": "https://www.kuaikan-api.com/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "熊掌资源",
+  "api": "https://xzcjz.com/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "飘花资源",
+  "api": "http://www.ahjiuman.com/api.php/provide/vod/at/json",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "天翼资源",
+  "api": "https://www.911ysw.top/tianyi.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "虎牙资源",
+  "api": "https://www.huyaapi.com/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "百度资源",
+  "api": "https://api.apibdzy.com/api.php/provide/vod",
+  "priority": 6,
+  "note": "JSON接口"
+ },
+ {
+  "name": "速博资源",
+  "api": "https://subocaiji.com/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "奇虎资源",
+  "api": "https://caiji.qhzyapi.com/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "快云资源",
+  "api": "https://www.kuaiyunzy.com/api.php/provide/vod",
+  "priority": 7,
+  "note": "JSON接口"
+ },
+ {
+  "name": "开放电影",
+  "api": "http://vod-demo.onrender.com/pubdvod.php",
+  "priority": 8,
+  "note": "公开测试接口"
+ },
+ {
+  "name": "39影视",
+  "api": "http://39kan.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "矢量资源",
+  "api": "http://vlbmv.cc/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "乐活影视",
+  "api": "http://lehootv.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "唐人街",
+  "api": "http://tangrenjie.tv/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "酷点资源",
+  "api": "http://api.kuapi.cc/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "酷点备用",
+  "api": "http://kudian10.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "酷点备用线路"
+ },
+ {
+  "name": "森林资源",
+  "api": "http://slapibf.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "影库资源",
+  "api": "http://api.ykapi.net/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "探探资源",
+  "api": "http://apitzy.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "金鹰资源",
+  "api": "http://j8zyapi.com/provide/vod/from/jin",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "奥斯卡资源",
+  "api": "http://aosikazy.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "老鸭资源",
+  "api": "http://api.apilyzy.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "北斗资源",
+  "api": "https://m3u8.bdxzyapi.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "快播资源",
+  "api": "http://www.kuaibozy.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "艾旦影视",
+  "api": "http://lovedan.net/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "飘花电影",
+  "api": "http://www.zzrhgg.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "网片电影",
+  "api": "http://prinevillesda.org/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "麒麟资源",
+  "api": "https://www.qilinzyz.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "番茄资源",
+  "api": "http://api.lqzy.cc/api.php/provide/vod",
+  "priority": 8,
+  "note": "补充资源站"
+ },
+ {
+  "name": "8090资源",
+  "api": "http://zy.yilans.net:8090/api.php/provide/vod",
+  "priority": 9,
+  "note": "补充资源站"
+ },
+ {
+  "name": "官网采集",
+  "api": "http://gwcmslctv.vip/api.php/provide/vod",
+  "priority": 9,
+  "note": "补充资源站"
+ },
+ {
+  "name": "玉兔资源",
+  "api": "https://yutuzy.com/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "CK资源网",
+  "api": "https://ckzy1.com/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "888联盟",
+  "api": "https://888lm.vip/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "暴风资源站",
+  "api": "http://bfzy3.tv/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "155资源站",
+  "api": "https://155zy3.com/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "森林资源站",
+  "api": "http://senlinzy3.com/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "无水印资源站",
+  "api": "https://wsyzy.sbs/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "98资源网",
+  "api": "https://98zy.me/api.php/provide/vod",
+  "priority": 9,
+  "note": "萌芽合作站"
+ },
+ {
+  "name": "飞速",
+  "api": "https://www.feisuzyapi.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ },
+ {
+  "name": "天空",
+  "api": "https://api.tiankongapi.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ },
+ {
+  "name": "乐视",
+  "api": "https://leshiapi.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ },
+ {
+  "name": "魔都net",
+  "api": "https://moduzy.net/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ },
+ {
+  "name": "卧龙",
+  "api": "https://collect.wolongzyw.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ },
+ {
+  "name": "木花",
+  "api": "https://mozhuazy.com/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ },
+ {
+  "name": "WW",
+  "api": "https://wwzy.tv/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ },
+ {
+  "name": "CK",
+  "api": "https://ckzy.me/api.php/provide/vod",
+  "priority": 8,
+  "note": "外部仓库"
+ }
+]

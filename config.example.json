@@ -18,6 +18,12 @@
     {"name": "如意", "api": "https://cj.rytvapi.com/api.php/provide/vod"},
     {"name": "三八", "api": "https://vod38.com/api.php/provide/vod"},
     {"name": "无尽", "api": "https://api.wujinapi.com/api.php/provide/vod"},
-    {"name": "爱蛋", "api": "https://lovedan.net/api.php/provide/vod"}
+    {"name": "爱蛋", "api": "https://lovedan.net/api.php/provide/vod"},
+    {"name": "西瓜", "api": "https://xgzy.tv/api.php/provide/vod"},
+    {"name": "蓝志", "api": "https://www.lzzy.tv/api.php/provide/vod"},
+    {"name": "13大众", "api": "http://cdn.dzzyapi.com/api.php/provide/vod"},
+    {"name": "猫眼", "api": "https://api.maoyanapi.top/api.php/provide/vod/from/mym3u8"},
+    {"name": "百度资源", "api": "https://api.apibdzy.com/api.php/provide/vod"},
+    {"name": "速播", "api": "https://www.subozy.com/api.php/provide/vod"}
   ]
 }
